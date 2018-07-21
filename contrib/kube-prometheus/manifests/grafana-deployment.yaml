@@ -1,3 +1,17 @@
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: grafana-persistent-storage
+  namespace: monitoring
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+  storageClassName: ceph-rbd
+---
+
 apiVersion: apps/v1beta2
 kind: Deployment
 metadata:
@@ -29,9 +43,12 @@ spec:
             cpu: 100m
             memory: 100Mi
         volumeMounts:
-        - mountPath: /var/lib/grafana
-          name: grafana-storage
-          readOnly: false
+#        - mountPath: /var/lib/grafana
+#          name: grafana-storage
+#          readOnly: false
+        - name: grafana-persistent-storage
+          mountPath: /var/lib/grafana
+          subPath: grafana
         - mountPath: /etc/grafana/provisioning/datasources
           name: grafana-datasources
           readOnly: false
@@ -63,12 +80,20 @@ spec:
           name: grafana-dashboard-statefulset
           readOnly: false
       securityContext:
-        runAsNonRoot: true
-        runAsUser: 65534
+        runAsUser: 472
+        fsGroup: 472
+#      securityContext:
+#        runAsNonRoot: true
+#        runAsUser: 65534
       serviceAccountName: grafana
+      nodeSelector:
+        ceph-enabled: "true"
       volumes:
-      - emptyDir: {}
-        name: grafana-storage
+      - name: grafana-persistent-storage
+        persistentVolumeClaim:
+          claimName: grafana-persistent-storage
+#      - emptyDir: {}
+#        name: grafana-storage
       - name: grafana-datasources
         secret:
           secretName: grafana-datasources

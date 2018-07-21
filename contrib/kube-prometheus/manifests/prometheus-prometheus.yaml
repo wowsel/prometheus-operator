@@ -14,10 +14,24 @@ spec:
   baseImage: quay.io/prometheus/prometheus
   nodeSelector:
     beta.kubernetes.io/os: linux
+    ceph-enabled: "true"
   replicas: 2
   resources:
     requests:
       memory: 400Mi
+  storage:
+    class: ceph-rbd
+    selector:
+    resources:
+    volumeClaimTemplate:
+      metadata:
+        annotations:
+          annotation1: prometheus
+      spec:
+        storageClassName: ceph-rbd
+        resources:
+          requests:
+            storage: 5Gi
   ruleSelector:
     matchLabels:
       prometheus: k8s
